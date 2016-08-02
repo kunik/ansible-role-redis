@@ -1,4 +1,4 @@
-nginx
+Redis
 =====
 
 This Ansible role installs redis
