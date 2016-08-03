@@ -1,7 +1,7 @@
 - name: restart redis
-  sudo: true
-  service: name=redis-server state=restarted
+  become: yes
+  service: name=redis state=restarted enabled=yes sleep=1
 
 - name: reload redis
-  sudo: true
-  service: name=redis-server state=reloaded
+  become: yes
+  service: name=redis state=reloaded

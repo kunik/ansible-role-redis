@@ -1,26 +1,62 @@
 - name: add Redis PPA
-  sudo: true
+  become: yes
   apt_repository: repo=ppa:chris-lea/redis-server
 
 - name: install 'redis-server'
-  sudo: true
+  become: yes
   apt: pkg=redis-server state=latest
-  register: result
+  register: redis_install_result
+
+- name: stop default server
+  become: yes
+  command: /usr/bin/redis-cli -p 6379 shutdown
+  when: redis_install_result.changed
+  ignore_errors: yes
+
+- name: stop default server
+  become: yes
+  command: /etc/init.d/redis-server stop
+  when: redis_install_result.changed
+  ignore_errors: yes
+
+- name: stop default server
+  service: name=redis-server state=stopped enabled=no
+  when: redis_install_result.changed
+  ignore_errors: yes
 
 - name: create redis data dir
-  sudo: true
+  become: yes
   file: >
-    path={{ redis.dir }}
+    path={{ redis.config.dir }}
     state=directory
     owner=redis
     group=redis
 
+- name: remove default redis config (if configfile path is different)
+  become: yes
+  file: path=/etc/redis/redis.conf state=absent
+  when: redis.config_path != '/etc/redis/redis.conf'
+
+- name: generate upstart script
+  become: yes
+  template: >
+    src=upstart.conf.j2
+    dest=/etc/init/redis.conf
+    owner=root
+    group=root
+    mode=0644
+  notify: restart redis
+
 - name: generate config file
-  sudo: true
+  become: yes
   template: >
     src=redis.conf.j2
     dest=/etc/redis/redis.conf
     owner=root
     group=root
     mode=0644
+    backup=yes
   notify: restart redis
+
+- name: flush handlers
+  meta: flush_handlers
