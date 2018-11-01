@@ -1,4 +1,4 @@
-{% for k, v in redis.config.iteritems() %}
+{% for k, v in redis.config.items() %}
 {% if v != "" %}
 {{ k }} {{ v }}
 {% endif %}
